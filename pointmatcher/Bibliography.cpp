@@ -230,7 +230,19 @@ namespace PointMatcherSupport
 				{"pages", "134--148"},
 				{"doi", "10.3389/frobt.2020.572054"},
 				{"fulltext", "https://www.frontiersin.org/article/10.3389/frobt.2020.572054"}
-			}}
+			}},
+			{"Segal2009", {
+			   {"type", "article"},
+			   {"author", "Segal, Aleksandr and Haehnel, Dirk and Thrun, Sebastian"},
+			   {"title", "Generalized-icp"},
+			   {"booktitle", "Robotics: science and systems"},
+			   {"month", "jun"},
+			   {"year", "2009"},
+			   {"volume", "2"},
+			   {"number", "4"},
+			   {"pages", "435--442"},
+			   {"fulltext", "https://www.robots.ox.ac.uk/~avsegal/resources/papers/Generalized_ICP.pdf"}
+	   }}
 		};
 	}
 	
