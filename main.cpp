@@ -1,6 +1,5 @@
 #include <iostream>
 #include "pointmatcher/PointMatcher.h"
-#include "pointmatcher/ErrorMinimizers/GICP/GICP.h"
 
 typedef PointMatcher<float> PM;
 
@@ -11,7 +10,11 @@ int main(int argc, char** argv)
 	PM::DataPoints reading = PM::DataPoints::load("/home/norlab/Desktop/1617238752456772327.vtk");
 	PM::DataPoints reference = PM::DataPoints::load("/home/norlab/Desktop/1617238750956836700.vtk");
 
-	std::cout << reference.descriptorLabels << std::endl;
+	PM::ICP icp;
+	icp.setDefault();
+	std::shared_ptr<PM::ErrorMinimizer> errorMinimizer = PM::get().ErrorMinimizerRegistrar.create("GICPErrorMinimizer");
+	icp.errorMinimizer = errorMinimizer;
+	std::cout << icp(reading, reference) << std::endl;
 
 	return 0;
 }

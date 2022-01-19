@@ -6,6 +6,7 @@
 #include "errorminimizers/point_to_point.h"
 #include "errorminimizers/point_to_point_similarity.h"
 #include "errorminimizers/point_to_point_with_cov.h"
+#include "errorminimizers/gicp.h"
 
 namespace python
 {
@@ -21,6 +22,7 @@ namespace python
 			errorminimizers::pybindPointToPoint(errorminizersModule);
 			errorminimizers::pybindPointToPointSimilarity(errorminizersModule);
 			errorminimizers::pybindPointToPointWithCov(errorminizersModule);
+			errorminimizers::pybindGICP(errorminizersModule);
 		}
 	}
 }

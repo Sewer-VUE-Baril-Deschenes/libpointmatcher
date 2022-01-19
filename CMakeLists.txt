@@ -149,7 +149,9 @@ include_directories(SYSTEM "${EIGEN_INCLUDE_DIR}")
 #find_package(Eigen3 REQUIRED)
 #message("-- eigen3 , version ${EIGEN_VERSION}")
 
-
+find_package(GSL)
+include_directories(${GSL_INCLUDE_DIRS})
+set(EXTERNAL_LIBS ${EXTERNAL_LIBS} ${GSL_LIBRARIES})
 
 #--------------------
 # DEPENDENCY: nabo
@@ -325,6 +327,7 @@ set(POINTMATCHER_SRC
 	pointmatcher/ErrorMinimizers/PointToPoint.cpp
 	pointmatcher/ErrorMinimizers/PointToPointWithCov.cpp
 	pointmatcher/ErrorMinimizers/PointToPointSimilarity.cpp
+	pointmatcher/ErrorMinimizers/GICP/GICP.cpp
 	pointmatcher/ErrorMinimizers/Identity.cpp
 #DataPointsFilters
 	pointmatcher/DataPointsFilters/Identity.cpp
@@ -368,7 +371,7 @@ file(GLOB_RECURSE POINTMATCHER_HEADERS "pointmatcher/*.h")
 add_library(pointmatcher ${POINTMATCHER_SRC} ${POINTMATCHER_HEADERS} )
 
 add_executable(main main.cpp pointmatcher/ErrorMinimizers/GICP/optimize.cpp pointmatcher/ErrorMinimizers/GICP/transform.cpp pointmatcher/ErrorMinimizers/GICP/bfgs_funcs.cpp pointmatcher/ErrorMinimizers/GICP/GICP.cpp)
-target_link_libraries(main pointmatcher gsl blas)
+target_link_libraries(main pointmatcher)
 
 target_include_directories(pointmatcher PUBLIC
   $<INSTALL_INTERFACE:>

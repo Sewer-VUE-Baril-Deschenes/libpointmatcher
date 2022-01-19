@@ -7,6 +7,8 @@
 template<typename T>
 struct GICPErrorMinimizer: PointMatcher<T>::ErrorMinimizer
 {
+	typedef PointMatcher<T> PM;
+
 	typedef PointMatcherSupport::Parametrizable Parametrizable;
 	typedef PointMatcherSupport::Parametrizable P;
 	typedef Parametrizable::Parameters Parameters;
@@ -14,6 +16,7 @@ struct GICPErrorMinimizer: PointMatcher<T>::ErrorMinimizer
 
 	typedef typename PointMatcher<T>::ErrorMinimizer::ErrorElements ErrorElements;
 	typedef typename PointMatcher<T>::TransformationParameters TransformationParameters;
+	typedef typename PointMatcher<T>::DataPoints::InvalidField InvalidField;
 
 	virtual inline const std::string name()
 	{
@@ -33,6 +36,9 @@ struct GICPErrorMinimizer: PointMatcher<T>::ErrorMinimizer
 	GICPErrorMinimizer(const Parameters& params = Parameters());
 	GICPErrorMinimizer(const ParametersDoc paramsDoc, const Parameters& params);
 	virtual TransformationParameters compute(const ErrorElements& mPts);
+
+	static constexpr T TRANSLATION_EPSILON = 5e-4;
+	static constexpr T ROTATION_EPSILON = 2e-3;
 };
 
 

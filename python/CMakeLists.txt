@@ -55,6 +55,7 @@ set(PYBIND11_SOURCES
     errorminimizers/point_to_point.cpp
     errorminimizers/point_to_point_similarity.cpp
     errorminimizers/point_to_point_with_cov.cpp
+    errorminimizers/gicp.cpp
 
     #datapointfilters module
     datapointsfilters/bounding_box.cpp
