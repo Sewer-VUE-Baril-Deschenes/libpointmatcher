@@ -44,6 +44,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "DataPointsFilters/MaxQuantileOnAxis.h"
 #include "DataPointsFilters/MaxDensity.h"
 #include "DataPointsFilters/SurfaceNormal.h"
+#include "DataPointsFilters/SurfaceNormalGICPCovariance.h"
 #include "DataPointsFilters/SamplingSurfaceNormal.h"
 #include "DataPointsFilters/OrientNormals.h"
 #include "DataPointsFilters/IncidenceAngle.h"
@@ -77,6 +78,7 @@ struct DataPointsFiltersImpl
 	typedef ::MaxQuantileOnAxisDataPointsFilter<T> MaxQuantileOnAxisDataPointsFilter;
 	typedef ::MaxDensityDataPointsFilter<T> MaxDensityDataPointsFilter;
 	typedef ::SurfaceNormalDataPointsFilter<T> SurfaceNormalDataPointsFilter;
+	typedef ::SurfaceNormalGICPCovarianceDataPointsFilter<T> SurfaceNormalGICPCovarianceDataPointsFilter;
 	typedef ::SamplingSurfaceNormalDataPointsFilter<T> SamplingSurfaceNormalDataPointsFilter;
 	typedef ::OrientNormalsDataPointsFilter<T>  OrientNormalsDataPointsFilter;
 	typedef ::IncidenceAngleDataPointsFilter<T> IncidenceAngleDataPointsFilter;
