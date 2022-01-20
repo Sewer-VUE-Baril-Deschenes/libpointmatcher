@@ -81,18 +81,14 @@ SurfaceNormalGICPCovarianceDataPointsFilter<T>::filter(
 }
 
 template<typename T>
-typename PointMatcher<T>::Matrix inverseSquareRootMatrix(typename PointMatcher<T>::Matrix eigenVe, typename PointMatcher<T>::Vector eigenVa)
+typename PointMatcher<T>::Matrix inverseSquareRootDiagonalMatrix(typename PointMatcher<T>::Matrix matrix)
 {
-    typename PointMatcher<T>::Matrix d2 = PointMatcher<T>::Matrix::Zero(3, 3);
-    for(size_t i=0; i < eigenVa.size(); ++i)
+    typename PointMatcher<T>::Matrix inverseSquareRootedMatrix = PointMatcher<T>::Matrix::Zero(matrix.rows(), matrix.cols());
+    for(size_t i=0; i < inverseSquareRootedMatrix.rows(); ++i)
     {
-        eigenVa(i) = (eigenVa(i) + fabs(eigenVa(i))) / 2;
-        if(eigenVa(i) != 0)
-        {
-            d2(i, i) = 1 / sqrt(eigenVa(i));
-        }
+        inverseSquareRootedMatrix(i, i) = 1.0 / std::sqrt(matrix(i, i));
     }
-    return eigenVe * d2 * eigenVe.transpose();
+    return inverseSquareRootedMatrix;
 }
 
 // In-place filter
@@ -217,60 +213,71 @@ void SurfaceNormalGICPCovarianceDataPointsFilter<T>::inPlaceFilter(
         Matrix pointWeightedCovarianceInScanFrame;
         if(keepGICPCovariance)
         {
-            pointWeightedCovarianceInScanFrame = Matrix::Zero(featDim-1, featDim-1);
-            // sort eigen vectors first
-            const std::vector<size_t> idx = sortIndexes<T>(eigenVa);
-            const size_t idxSize = idx.size();
-            Vector tmp_eigenVa = eigenVa;
-            Matrix tmp_eigenVe = eigenVe;
-            for(size_t j=0; j<idxSize; ++j)
-            {
-                eigenVa(j,0) = tmp_eigenVa(idx[j], 0);
-                eigenVe.col(j) = tmp_eigenVe.col(idx[j]);
-            }
-            Matrix projectionMatrix(2, 3);
-            projectionMatrix.row(0) = eigenVe.col(1).transpose();
-            projectionMatrix.row(1) = eigenVe.col(2).transpose();
-            Matrix descriptorWeights(1, realKnn);
-            for(int j = 0; j < int(knn); ++j)
-            {
-                if (matches.ids(0,i) != Matches::InvalidId)
-                {
-                    descriptorWeights(0,j) = exp(-0.5 * std::pow((intensities(0, matches.ids(j)) - intensities(0, i)), 2) / measurementCovariance);
+            if(C.fullPivHouseholderQr().rank()+1 >= featDim-1) {
+                const Eigen::EigenSolver<Matrix> solver(C);
+                eigenVa = solver.eigenvalues().real();
+                eigenVe = solver.eigenvectors().real();
+                pointWeightedCovarianceInScanFrame = Matrix::Zero(featDim - 1, featDim - 1);
+                // sort eigen vectors first
+                const std::vector<size_t> idx = sortIndexes<T>(eigenVa);
+                const size_t idxSize = idx.size();
+                Vector tmp_eigenVa = eigenVa;
+                Matrix tmp_eigenVe = eigenVe;
+                for (size_t j = 0; j < idxSize; ++j) {
+                    eigenVa(j, 0) = tmp_eigenVa(idx[j], 0);
+                    eigenVe.col(j) = tmp_eigenVe.col(idx[j]);
                 }
-            }
-            Matrix projectedNeighbors(2, realKnn);
-            Matrix weightedProjectedNeighbors(2, realKnn);
-            for(int j = 0; j < int(knn); ++j)
-            {
-                if (matches.ids(0,i) != Matches::InvalidId)
-                {
-                    projectedNeighbors.col(j) = projectionMatrix * cloud.features.col(matches.ids(j)).head(3);
-                    weightedProjectedNeighbors.col(j) = descriptorWeights(0, j) * projectedNeighbors.col(j);
+                Matrix projectionMatrix(2, 3);
+                projectionMatrix.row(0) = eigenVe.col(1).transpose();
+                projectionMatrix.row(1) = eigenVe.col(2).transpose();
+                Matrix descriptorWeights(1, realKnn);
+                for (int j = 0; j < int(knn); ++j) {
+                    if (matches.ids(0, i) != Matches::InvalidId) {
+                        descriptorWeights(0, j) = exp(
+                                -0.5 * std::pow((intensities(0, matches.ids(j)) - intensities(0, i)), 2) /
+                                measurementCovariance);
+                    }
                 }
-            }
-            T weightedSumInverse = 1/descriptorWeights.sum();
-            Vector weightedMean = weightedSumInverse * weightedProjectedNeighbors.rowwise().sum();
-            Matrix weightedCovariance = Matrix::Zero(featDim-2, featDim-2);
-            for(int j = 0; j < int(knn); ++j)
-            {
-                if (matches.ids(0,i) != Matches::InvalidId)
-                {
-                    Vector projectedNeighborError = projectedNeighbors.col(j) - weightedMean;
-                    weightedCovariance += descriptorWeights(0, j) * (projectedNeighborError * projectedNeighborError.transpose());
+                Matrix projectedNeighbors(2, realKnn);
+                Matrix weightedProjectedNeighbors(2, realKnn);
+                for (int j = 0; j < int(knn); ++j) {
+                    if (matches.ids(0, i) != Matches::InvalidId) {
+                        projectedNeighbors.col(j) = projectionMatrix * cloud.features.col(matches.ids(j)).head(3);
+                        weightedProjectedNeighbors.col(j) = descriptorWeights(0, j) * projectedNeighbors.col(j);
+                    }
                 }
+                T weightedSumInverse = 1 / descriptorWeights.sum();
+                Vector weightedMean = weightedSumInverse * weightedProjectedNeighbors.rowwise().sum();
+                Matrix weightedCovariance = Matrix::Zero(featDim - 2, featDim - 2);
+                for (int j = 0; j < int(knn); ++j) {
+                    if (matches.ids(0, i) != Matches::InvalidId) {
+                        Vector projectedNeighborError = projectedNeighbors.col(j) - weightedMean;
+                        weightedCovariance +=
+                                descriptorWeights(0, j) * (projectedNeighborError * projectedNeighborError.transpose());
+                    }
+                }
+                weightedCovariance = weightedSumInverse * weightedCovariance;
+                Matrix populationCovariance = Matrix::Zero(featDim - 2, featDim - 2);
+                populationCovariance(0, 0) = eigenVa(1);
+                populationCovariance(1, 1) = eigenVa(2);
+                Matrix populationCovarianceInverseSquareRoot = inverseSquareRootDiagonalMatrix<T>(populationCovariance);
+                weightedCovariance = populationCovarianceInverseSquareRoot * weightedCovariance *
+                                     populationCovarianceInverseSquareRoot;
+                Matrix pointWeightedCovarianceInPlane = Matrix::Zero(featDim - 1, featDim - 1);
+                pointWeightedCovarianceInPlane.topLeftCorner(featDim - 2, featDim - 2) = weightedCovariance;
+                pointWeightedCovarianceInPlane(featDim - 2, featDim - 2) = normalVariance;
+                Matrix rotationPlaneToScan(featDim - 1, featDim - 1);
+                rotationPlaneToScan.col(0) = eigenVe.col(1);
+                rotationPlaneToScan.col(1) = eigenVe.col(2);
+                rotationPlaneToScan.col(2) = eigenVe.col(
+                        0); // NOTE: The eigen vectors order is determined because surface normal is along the Z axis
+                pointWeightedCovarianceInScanFrame =
+                        rotationPlaneToScan * pointWeightedCovarianceInPlane * rotationPlaneToScan.transpose();
             }
-            weightedCovariance = weightedSumInverse * weightedCovariance;
-            Matrix populationCovarianceInverseSquareRoot = inverseSquareRootMatrix<T>(eigenVe, eigenVa);
-            weightedCovariance = populationCovarianceInverseSquareRoot * weightedCovariance * populationCovarianceInverseSquareRoot;
-            Matrix pointWeightedCovarianceInPlane = Matrix::Zero(featDim-1, featDim-1);
-            pointWeightedCovarianceInPlane.topLeftCorner(featDim-2, featDim-2) = weightedCovariance;
-            pointWeightedCovarianceInPlane(featDim-2, featDim-2) = normalVariance;
-            Matrix rotationPlaneToScan(featDim-1, featDim-1);
-            rotationPlaneToScan.col(0) = eigenVe.col(1);
-            rotationPlaneToScan.col(1) = eigenVe.col(2);
-            rotationPlaneToScan.col(2) = eigenVe.col(0); // NOTE: The eigen vectors order is determined because surface normal is along the Z axis
-            pointWeightedCovarianceInScanFrame = rotationPlaneToScan * pointWeightedCovarianceInPlane * rotationPlaneToScan.transpose();
+            else
+            {
+                pointWeightedCovarianceInScanFrame = Matrix::Zero(featDim - 1, featDim - 1);
+            }
         }
         if(keepNormals || keepEigenValues || keepEigenVectors)
         {

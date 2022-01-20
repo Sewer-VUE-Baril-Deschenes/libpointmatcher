@@ -18,7 +18,7 @@ int main(int argc, char** argv)
     f.apply(reference);
 
     std::cout << reference.descriptorLabels << std::endl;
-    std::cout << reference.getDescriptorViewByName("covariance").col(0) << std::endl;
+    std::cout << reference.getDescriptorViewByName("gicpCovariance").col(0) << std::endl;
 
     return 0;
 }
