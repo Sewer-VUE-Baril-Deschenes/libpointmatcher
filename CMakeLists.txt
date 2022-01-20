@@ -338,6 +338,7 @@ set(POINTMATCHER_SRC
 	pointmatcher/DataPointsFilters/MaxQuantileOnAxis.cpp
 	pointmatcher/DataPointsFilters/MaxDensity.cpp
 	pointmatcher/DataPointsFilters/SurfaceNormal.cpp
+		pointmatcher/DataPointsFilters/SurfaceNormalGICPCovariance.cpp
 	pointmatcher/DataPointsFilters/SamplingSurfaceNormal.cpp
 	pointmatcher/DataPointsFilters/OrientNormals.cpp
 	pointmatcher/DataPointsFilters/IncidenceAngle.cpp
