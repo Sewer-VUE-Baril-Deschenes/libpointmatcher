@@ -15,6 +15,7 @@ int main(int argc, char** argv)
 	perturbatedReading.save("/home/norlab/Desktop/perturbated_1617238752456772327.vtk");
 
 	std::shared_ptr<PM::DataPointsFilter> gicpCovarianceFilter = PM::get().DataPointsFilterRegistrar.create("SurfaceNormalGICPCovarianceDataPointsFilter");
+	gicpCovarianceFilter->inPlaceFilter(perturbatedReading);
 	gicpCovarianceFilter->inPlaceFilter(reference);
 
 	PM::ICP icp;

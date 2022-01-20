@@ -80,14 +80,18 @@ typename PointMatcher<T>::TransformationParameters convertDGCTransformToTransfor
 template<typename T>
 typename PointMatcher<T>::TransformationParameters GICPErrorMinimizer<T>::compute(const ErrorElements& mPtsIn)
 {
+	if (!mPtsIn.reading.descriptorExists("gicpCovariance"))
+	{
+		throw InvalidField("GICPErrorMinimizer: Error, no gicpCovariance found in reading descriptors.");
+	}
 	if (!mPtsIn.reference.descriptorExists("gicpCovariance"))
 	{
 		throw InvalidField("GICPErrorMinimizer: Error, no gicpCovariance found in reference descriptors.");
 	}
 	ErrorElements mPts = mPtsIn;
-	const auto& covariances = mPts.reference.getDescriptorViewByName("gicpCovariance");
+	const auto& readingCovariances = mPts.reading.getDescriptorViewByName("gicpCovariance");
+	const auto& referenceCovariances = mPts.reference.getDescriptorViewByName("gicpCovariance");
 
-	int num_matches = 0;
 	int n = mPts.reading.getNbPoints();
 	dgc_transform_t t;
 	dgc_transform_identity(t);
@@ -109,6 +113,7 @@ typename PointMatcher<T>::TransformationParameters GICPErrorMinimizer<T>::comput
 	opt_data.p2 = &mPts.reference;
 	opt_data.M = mahalanobis;
 	opt_data.solve_rotation = true;
+	opt_data.num_matches = n;
 	dgc_transform_copy(opt_data.base_t, identity);
 
 	dgc::gicp::GICPOptimizer<T> opt;
@@ -138,7 +143,7 @@ typename PointMatcher<T>::TransformationParameters GICPErrorMinimizer<T>::comput
 			gsl_matrix_set(gsl_R, i, j, transform_R[i][j]);
 		}
 	}
-	/* find correpondences */
+
 	for(int i = 0; i < n; i++)
 	{
 		query_point[0] = mPts.reading.features(0, i);
@@ -149,8 +154,9 @@ typename PointMatcher<T>::TransformationParameters GICPErrorMinimizer<T>::comput
 		dgc_transform_point(&query_point[0], &query_point[1], &query_point[2], t);
 
 		// set up the updated mahalanobis matrix here
-		gsl_matrix_set_zero(C1);
-		convertDescriptorToGSLMatrix<T>(covariances.col(i), C2);
+		convertDescriptorToGSLMatrix<T>(readingCovariances.col(i), C1); // Plane-to-plane
+//		gsl_matrix_set_zero(C1); // Point-to-plane
+		convertDescriptorToGSLMatrix<T>(referenceCovariances.col(i), C2);
 		gsl_matrix_view M = gsl_matrix_view_array(&mahalanobis[i][0][0], 3, 3);
 		gsl_matrix_set_zero(&M.matrix);
 		gsl_matrix_set_zero(gsl_temp);
@@ -174,9 +180,7 @@ typename PointMatcher<T>::TransformationParameters GICPErrorMinimizer<T>::comput
 			gsl_vector_view row_view = gsl_matrix_row(&M.matrix, k);
 			gsl_linalg_cholesky_svx(gsl_temp, &row_view.vector);
 		}
-		num_matches++;
 	}
-	opt_data.num_matches = num_matches;
 
 	/* optimize transformation using the current assignment and Mahalanobis metrics*/
 	opt.Optimize(t, opt_data);

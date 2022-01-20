@@ -64,7 +64,6 @@ SurfaceNormalGICPCovarianceDataPointsFilter<T>::SurfaceNormalGICPCovarianceDataP
         keepGICPCovariance(Parametrizable::get<bool>("keepGICPCovariance")),
         sortEigen(Parametrizable::get<bool>("sortEigen")),
         smoothNormals(Parametrizable::get<bool>("smoothNormals")),
-        measurementCovariance(Parametrizable::get<T>("measurementCovariance")), // TODO: compute using intensities instead
         normalVariance(Parametrizable::get<T>("normalVariance"))
 {
 }
@@ -183,6 +182,13 @@ void SurfaceNormalGICPCovarianceDataPointsFilter<T>::inPlaceFilter(
     matches = matcher.findClosests(cloud);
 
     const auto& intensities = cloud.getDescriptorViewByName("intensity");
+	T intensityCovariance;
+	if(keepGICPCovariance)
+	{
+		const T intensityMean = intensities.mean();
+		const Matrix intensityDeviations = intensities.array() - intensityMean;
+		intensityCovariance = (intensityDeviations * intensityDeviations.transpose())(0, 0) / T(intensities.cols());
+	}
 
     // Search for surrounding points and compute descriptors
     int degenerateCount(0);
@@ -233,9 +239,7 @@ void SurfaceNormalGICPCovarianceDataPointsFilter<T>::inPlaceFilter(
                 Matrix descriptorWeights(1, realKnn);
                 for (int j = 0; j < int(knn); ++j) {
                     if (matches.ids(0, i) != Matches::InvalidId) {
-                        descriptorWeights(0, j) = exp(
-                                -0.5 * std::pow((intensities(0, matches.ids(j)) - intensities(0, i)), 2) /
-                                measurementCovariance);
+                        descriptorWeights(0, j) = exp(-0.5 * std::pow((intensities(0, matches.ids(j)) - intensities(0, i)), 2) / intensityCovariance);
                     }
                 }
                 Matrix projectedNeighbors(2, realKnn);
@@ -263,8 +267,8 @@ void SurfaceNormalGICPCovarianceDataPointsFilter<T>::inPlaceFilter(
                 Matrix populationCovarianceInverseSquareRoot = inverseSquareRootDiagonalMatrix<T>(populationCovariance);
                 weightedCovariance = populationCovarianceInverseSquareRoot * weightedCovariance * populationCovarianceInverseSquareRoot;
                 Matrix pointWeightedCovarianceInPlane = Matrix::Zero(featDim - 1, featDim - 1);
-//                pointWeightedCovarianceInPlane.topLeftCorner(featDim - 2, featDim - 2) = weightedCovariance; // Multi-channel GICP
-                pointWeightedCovarianceInPlane.topLeftCorner(featDim - 2, featDim - 2) = Matrix::Identity(featDim - 2, featDim - 2); // Point-to-plane GICP
+                pointWeightedCovarianceInPlane.topLeftCorner(featDim - 2, featDim - 2) = weightedCovariance; // Multi-channel GICP
+//                pointWeightedCovarianceInPlane.topLeftCorner(featDim - 2, featDim - 2) = Matrix::Identity(featDim - 2, featDim - 2); // Plane-to-plane GICP
                 pointWeightedCovarianceInPlane(featDim - 2, featDim - 2) = normalVariance;
                 Matrix rotationPlaneToScan(featDim - 1, featDim - 1);
                 rotationPlaneToScan.col(0) = eigenVe.col(1);
