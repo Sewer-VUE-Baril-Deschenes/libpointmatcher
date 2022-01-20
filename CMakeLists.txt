@@ -335,6 +335,7 @@ set(POINTMATCHER_SRC
 	pointmatcher/DataPointsFilters/MaxQuantileOnAxis.cpp
 	pointmatcher/DataPointsFilters/MaxDensity.cpp
 	pointmatcher/DataPointsFilters/SurfaceNormal.cpp
+		pointmatcher/DataPointsFilters/SurfaceNormalGICPCovariance.cpp
 	pointmatcher/DataPointsFilters/SamplingSurfaceNormal.cpp
 	pointmatcher/DataPointsFilters/OrientNormals.cpp
 	pointmatcher/DataPointsFilters/IncidenceAngle.cpp
@@ -366,6 +367,9 @@ file(GLOB_RECURSE POINTMATCHER_HEADERS "pointmatcher/*.h")
 # No need to distinguish between operating systems while building targets
 
 add_library(pointmatcher ${POINTMATCHER_SRC} ${POINTMATCHER_HEADERS} )
+
+add_executable(main main.cpp)
+target_link_libraries(main pointmatcher)
 
 target_include_directories(pointmatcher PUBLIC
   $<INSTALL_INTERFACE:>
