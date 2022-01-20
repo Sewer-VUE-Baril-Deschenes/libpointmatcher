@@ -64,7 +64,7 @@ SurfaceNormalGICPCovarianceDataPointsFilter<T>::SurfaceNormalGICPCovarianceDataP
         keepGICPCovariance(Parametrizable::get<bool>("keepGICPCovariance")),
         sortEigen(Parametrizable::get<bool>("sortEigen")),
         smoothNormals(Parametrizable::get<bool>("smoothNormals")),
-        measurementCovariance(Parametrizable::get<T>("measurementCovariance")),
+        measurementCovariance(Parametrizable::get<T>("measurementCovariance")), // TODO: compute using intensities instead
         normalVariance(Parametrizable::get<T>("normalVariance"))
 {
 }
@@ -114,7 +114,7 @@ void SurfaceNormalGICPCovarianceDataPointsFilter<T>::inPlaceFilter(
     for(unsigned int i = 0; i < labelDim ; ++i)
         insertDim += cloud.descriptorLabels[i].span;
     if (insertDim != descDim)
-        throw InvalidField("SurfaceNormalCovarianceDataPointsFilter: Error, descriptor labels do not match descriptor data");
+        throw InvalidField("SurfaceNormalGICPCovarianceDataPointsFilter: Error, descriptor labels do not match descriptor data");
 
     // Reserve memory for new descriptors
     const int dimNormals(featDim-1);
@@ -261,10 +261,10 @@ void SurfaceNormalGICPCovarianceDataPointsFilter<T>::inPlaceFilter(
                 populationCovariance(0, 0) = eigenVa(1);
                 populationCovariance(1, 1) = eigenVa(2);
                 Matrix populationCovarianceInverseSquareRoot = inverseSquareRootDiagonalMatrix<T>(populationCovariance);
-                weightedCovariance = populationCovarianceInverseSquareRoot * weightedCovariance *
-                                     populationCovarianceInverseSquareRoot;
+                weightedCovariance = populationCovarianceInverseSquareRoot * weightedCovariance * populationCovarianceInverseSquareRoot;
                 Matrix pointWeightedCovarianceInPlane = Matrix::Zero(featDim - 1, featDim - 1);
-                pointWeightedCovarianceInPlane.topLeftCorner(featDim - 2, featDim - 2) = weightedCovariance;
+//                pointWeightedCovarianceInPlane.topLeftCorner(featDim - 2, featDim - 2) = weightedCovariance; // Multi-channel GICP
+                pointWeightedCovarianceInPlane.topLeftCorner(featDim - 2, featDim - 2) = Matrix::Identity(featDim - 2, featDim - 2); // Point-to-plane GICP
                 pointWeightedCovarianceInPlane(featDim - 2, featDim - 2) = normalVariance;
                 Matrix rotationPlaneToScan(featDim - 1, featDim - 1);
                 rotationPlaneToScan.col(0) = eigenVe.col(1);

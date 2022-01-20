@@ -69,41 +69,38 @@ namespace dgc {
       double temp_double = 0;
       int N = opt_data->p1->getNbPoints();
       for(int i = 0; i < N; i++) {
-	int j = (*opt_data->nn_indecies)(0, i);
-	if(j != Nabo::NearestNeighbourSearch<T>::InvalidIndex) {
-	  // get point 1
-	  pt1[0] = (*opt_data->p1).features(0, i);
-	  pt1[1] = (*opt_data->p1).features(1, i);
-	  pt1[2] = (*opt_data->p1).features(2, i);
-	  
-	  // get point 2
-	  pt2[0] = (*opt_data->p2).features(0, j);
-	  pt2[1] = (*opt_data->p2).features(1, j);
-	  pt2[2] = (*opt_data->p2).features(2, j);
-	  
-	  //get M-matrix
-	  gsl_M = gsl_matrix_view_array(&opt_data->M[i][0][0], 3, 3);
-	  
-	  
-	  //transform point 1
-	  dgc_transform_point(&pt1[0], &pt1[1], &pt1[2], t);
-	  res[0] = pt1[0] - pt2[0];
-	  res[1] = pt1[1] - pt2[1];
-	  res[2] = pt1[2] - pt2[2];
+		  // get point 1
+		  pt1[0] = (*opt_data->p1).features(0, i);
+		  pt1[1] = (*opt_data->p1).features(1, i);
+		  pt1[2] = (*opt_data->p1).features(2, i);
 
-	  //cout << "res: (" << res[0] << ", " <<res[1] <<", " << res[2] << ")" << endl;
-	  
-	  // temp := M*res
-	  gsl_blas_dsymv(CblasLower, 1., &gsl_M.matrix, &gsl_res.vector, 0., &gsl_temp.vector);
-	  // temp_double := res'*temp = temp'*M*temp
-	  gsl_blas_ddot(&gsl_res.vector, &gsl_temp.vector, &temp_double);
-	  // increment total error
-	  
-	  f += temp_double/(double)opt_data->num_matches;	  
-	  //cout << "temp: " << temp_double << endl;
-	  //cout << "f: " << f << "\t (" << opt_data->num_matches << ")" << endl;
-	  //print_gsl_matrix(&gsl_M.matrix, "M");
-	}
+		  // get point 2
+		  pt2[0] = (*opt_data->p2).features(0, i);
+		  pt2[1] = (*opt_data->p2).features(1, i);
+		  pt2[2] = (*opt_data->p2).features(2, i);
+
+		  //get M-matrix
+		  gsl_M = gsl_matrix_view_array(&opt_data->M[i][0][0], 3, 3);
+
+
+		  //transform point 1
+		  dgc_transform_point(&pt1[0], &pt1[1], &pt1[2], t);
+		  res[0] = pt1[0] - pt2[0];
+		  res[1] = pt1[1] - pt2[1];
+		  res[2] = pt1[2] - pt2[2];
+
+		  //cout << "res: (" << res[0] << ", " <<res[1] <<", " << res[2] << ")" << endl;
+
+		  // temp := M*res
+		  gsl_blas_dsymv(CblasLower, 1., &gsl_M.matrix, &gsl_res.vector, 0., &gsl_temp.vector);
+		  // temp_double := res'*temp = temp'*M*temp
+		  gsl_blas_ddot(&gsl_res.vector, &gsl_temp.vector, &temp_double);
+		  // increment total error
+
+		  f += temp_double/(double)opt_data->num_matches;
+		  //cout << "temp: " << temp_double << endl;
+		  //cout << "f: " << f << "\t (" << opt_data->num_matches << ")" << endl;
+		  //print_gsl_matrix(&gsl_M.matrix, "M");
       }
       
       return f;
@@ -137,46 +134,43 @@ namespace dgc {
       gsl_matrix_set_zero(&gsl_temp_mat_r.matrix);
             
       for(int i = 0; i < opt_data->p1->getNbPoints(); i++) {
-	int j = (*opt_data->nn_indecies)(0, i);
-	if(j != Nabo::NearestNeighbourSearch<T>::InvalidIndex) {
-	  // get point 1
-	  pt1[0] = (*opt_data->p1).features(0, i);
-	  pt1[1] = (*opt_data->p1).features(1, i);
-	  pt1[2] = (*opt_data->p1).features(2, i);
-	  
-	  // get point 2
-	  pt2[0] = (*opt_data->p2).features(0, j);
-	  pt2[1] = (*opt_data->p2).features(1, j);
-	  pt2[2] = (*opt_data->p2).features(2, j);
-	  
-	  //get M-matrix
-	  gsl_M = gsl_matrix_view_array(&opt_data->M[i][0][0], 3, 3);	  
+		  // get point 1
+		  pt1[0] = (*opt_data->p1).features(0, i);
+		  pt1[1] = (*opt_data->p1).features(1, i);
+		  pt1[2] = (*opt_data->p1).features(2, i);
 
-	  //transform point 1
-	  dgc_transform_point(&pt1[0], &pt1[1], &pt1[2], t);
-	  res[0] = pt1[0] - pt2[0];
-	  res[1] = pt1[1] - pt2[1];
-	  res[2] = pt1[2] - pt2[2];
-	  
-	  // temp := M*res
-	  gsl_blas_dsymv(CblasLower, 1., &gsl_M.matrix, &gsl_res.vector, 0., &gsl_temp.vector);
-	  // temp_double := res'*temp = temp'*M*res
-	  gsl_blas_ddot(&gsl_res.vector, &gsl_temp.vector, &temp_double);
+		  // get point 2
+		  pt2[0] = (*opt_data->p2).features(0, i);
+		  pt2[1] = (*opt_data->p2).features(1, i);
+		  pt2[2] = (*opt_data->p2).features(2, i);
 
-	  // increment total translation gradient:
-	  // gsl_gradient_t += 2*M*res/num_matches
-	  gsl_blas_dsymv(CblasLower, 2./(double)opt_data->num_matches, &gsl_M.matrix, &gsl_res.vector, 1., &gsl_gradient_t.vector);	  
-	  
-	  if(opt_data->solve_rotation) {
-	    // compute rotation gradient here
-	    // get back the original untransformed point to compute the rotation gradient
-	    pt1[0] = (*opt_data->p1).features(0, i);
-	    pt1[1] = (*opt_data->p1).features(1, i);
-	    pt1[2] = (*opt_data->p1).features(2, i);
-	    dgc_transform_point(&pt1[0], &pt1[1], &pt1[2], opt_data->base_t);
-	    gsl_blas_dger(2./(double)opt_data->num_matches, &gsl_pt1.vector, &gsl_temp.vector, &gsl_temp_mat_r.matrix);
-	  }
-	}
+		  //get M-matrix
+		  gsl_M = gsl_matrix_view_array(&opt_data->M[i][0][0], 3, 3);
+
+		  //transform point 1
+		  dgc_transform_point(&pt1[0], &pt1[1], &pt1[2], t);
+		  res[0] = pt1[0] - pt2[0];
+		  res[1] = pt1[1] - pt2[1];
+		  res[2] = pt1[2] - pt2[2];
+
+		  // temp := M*res
+		  gsl_blas_dsymv(CblasLower, 1., &gsl_M.matrix, &gsl_res.vector, 0., &gsl_temp.vector);
+		  // temp_double := res'*temp = temp'*M*res
+		  gsl_blas_ddot(&gsl_res.vector, &gsl_temp.vector, &temp_double);
+
+		  // increment total translation gradient:
+		  // gsl_gradient_t += 2*M*res/num_matches
+		  gsl_blas_dsymv(CblasLower, 2./(double)opt_data->num_matches, &gsl_M.matrix, &gsl_res.vector, 1., &gsl_gradient_t.vector);
+
+		  if(opt_data->solve_rotation) {
+			  // compute rotation gradient here
+			  // get back the original untransformed point to compute the rotation gradient
+			  pt1[0] = (*opt_data->p1).features(0, i);
+			  pt1[1] = (*opt_data->p1).features(1, i);
+			  pt1[2] = (*opt_data->p1).features(2, i);
+			  dgc_transform_point(&pt1[0], &pt1[1], &pt1[2], opt_data->base_t);
+			  gsl_blas_dger(2./(double)opt_data->num_matches, &gsl_pt1.vector, &gsl_temp.vector, &gsl_temp_mat_r.matrix);
+		  }
       }
       // the above loop sets up the gradient with respect to the translation, and the matrix derivative w.r.t. the rotation matrix
       // this code sets up the matrix derivatives dR/dPhi, dR/dPsi, dR/dTheta. i.e. the derivatives of the whole rotation matrix with respect to the euler angles
@@ -220,55 +214,52 @@ namespace dgc {
       gsl_matrix_set_zero(&gsl_temp_mat_r.matrix);
       
       for(int i = 0; i < opt_data->p1->getNbPoints(); i++) {
-	int j = (*opt_data->nn_indecies)(0, i);
-	if(j != Nabo::NearestNeighbourSearch<T>::InvalidIndex) {
-	  // get point 1
-	  pt1[0] = (*opt_data->p1).features(0, i);
-	  pt1[1] = (*opt_data->p1).features(1, i);
-	  pt1[2] = (*opt_data->p1).features(2, i);
-	  
-	  // get point 2
-	  pt2[0] = (*opt_data->p2).features(0, j);
-	  pt2[1] = (*opt_data->p2).features(1, j);
-	  pt2[2] = (*opt_data->p2).features(2, j);
-	  
-	  //cout << "accessing " << i << " of " << opt_data->p1->Size() << ", " << opt_data->p2->Size() << endl;
-	  //get M-matrix
-	  gsl_M = gsl_matrix_view_array(&opt_data->M[i][0][0], 3, 3);	  
-	  
-	  //transform point 1
-	  dgc_transform_point(&pt1[0], &pt1[1], &pt1[2], t);
-	  res[0] = pt1[0] - pt2[0];
-	  res[1] = pt1[1] - pt2[1];
-	  res[2] = pt1[2] - pt2[2];
-	  
-	  // compute the transformed residual
-	  // temp := M*res
-	  //print_gsl_matrix(&gsl_M.matrix, "gsl_m");
-	  gsl_blas_dsymv(CblasLower, 1., &gsl_M.matrix, &gsl_res.vector, 0., &gsl_temp.vector);
-	  
-	  // compute M-norm of the residual
-	  // temp_double := res'*temp = temp'*M*res
-	  gsl_blas_ddot(&gsl_res.vector, &gsl_temp.vector, &temp_double);
-	  
-	  // accumulate total error: f += res'*M*res
-	  *f += temp_double/(double)opt_data->num_matches;
-	  
-	  // accumulate translation gradient:
-	  // gsl_gradient_t += 2*M*res
-	  gsl_blas_dsymv(CblasLower, 2./(double)opt_data->num_matches, &gsl_M.matrix, &gsl_res.vector, 1., &gsl_gradient_t.vector);	  
-	  
-	  if(opt_data->solve_rotation) {
-	    // accumulate the rotation gradient matrix
-	    // get back the original untransformed point to compute the rotation gradient
-	    pt1[0] = (*opt_data->p1).features(0, i);
-	    pt1[1] = (*opt_data->p1).features(1, i);
-	    pt1[2] = (*opt_data->p1).features(2, i);
-	    dgc_transform_point(&pt1[0], &pt1[1], &pt1[2], opt_data->base_t);
-	    // gsl_temp_mat_r += 2*(gsl_temp).(gsl_pt1)' [ = (2*M*residual).(gsl_pt1)' ]	  
-	    gsl_blas_dger(2./(double)opt_data->num_matches, &gsl_pt1.vector, &gsl_temp.vector, &gsl_temp_mat_r.matrix); 
-	  }
-	}
+		  // get point 1
+		  pt1[0] = (*opt_data->p1).features(0, i);
+		  pt1[1] = (*opt_data->p1).features(1, i);
+		  pt1[2] = (*opt_data->p1).features(2, i);
+
+		  // get point 2
+		  pt2[0] = (*opt_data->p2).features(0, i);
+		  pt2[1] = (*opt_data->p2).features(1, i);
+		  pt2[2] = (*opt_data->p2).features(2, i);
+
+		  //cout << "accessing " << i << " of " << opt_data->p1->Size() << ", " << opt_data->p2->Size() << endl;
+		  //get M-matrix
+		  gsl_M = gsl_matrix_view_array(&opt_data->M[i][0][0], 3, 3);
+
+		  //transform point 1
+		  dgc_transform_point(&pt1[0], &pt1[1], &pt1[2], t);
+		  res[0] = pt1[0] - pt2[0];
+		  res[1] = pt1[1] - pt2[1];
+		  res[2] = pt1[2] - pt2[2];
+
+		  // compute the transformed residual
+		  // temp := M*res
+		  //print_gsl_matrix(&gsl_M.matrix, "gsl_m");
+		  gsl_blas_dsymv(CblasLower, 1., &gsl_M.matrix, &gsl_res.vector, 0., &gsl_temp.vector);
+
+		  // compute M-norm of the residual
+		  // temp_double := res'*temp = temp'*M*res
+		  gsl_blas_ddot(&gsl_res.vector, &gsl_temp.vector, &temp_double);
+
+		  // accumulate total error: f += res'*M*res
+		  *f += temp_double/(double)opt_data->num_matches;
+
+		  // accumulate translation gradient:
+		  // gsl_gradient_t += 2*M*res
+		  gsl_blas_dsymv(CblasLower, 2./(double)opt_data->num_matches, &gsl_M.matrix, &gsl_res.vector, 1., &gsl_gradient_t.vector);
+
+		  if(opt_data->solve_rotation) {
+			  // accumulate the rotation gradient matrix
+			  // get back the original untransformed point to compute the rotation gradient
+			  pt1[0] = (*opt_data->p1).features(0, i);
+			  pt1[1] = (*opt_data->p1).features(1, i);
+			  pt1[2] = (*opt_data->p1).features(2, i);
+			  dgc_transform_point(&pt1[0], &pt1[1], &pt1[2], opt_data->base_t);
+			  // gsl_temp_mat_r += 2*(gsl_temp).(gsl_pt1)' [ = (2*M*residual).(gsl_pt1)' ]
+			  gsl_blas_dger(2./(double)opt_data->num_matches, &gsl_pt1.vector, &gsl_temp.vector, &gsl_temp_mat_r.matrix);
+		  }
       }      
       // the above loop sets up the gradient with respect to the translation, and the matrix derivative w.r.t. the rotation matrix
       // this code sets up the matrix derivatives dR/dPhi, dR/dPsi, dR/dTheta. i.e. the derivatives of the whole rotation matrix with respect to the euler angles

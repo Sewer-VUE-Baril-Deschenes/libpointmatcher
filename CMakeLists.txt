@@ -327,6 +327,9 @@ set(POINTMATCHER_SRC
 	pointmatcher/ErrorMinimizers/PointToPoint.cpp
 	pointmatcher/ErrorMinimizers/PointToPointWithCov.cpp
 	pointmatcher/ErrorMinimizers/PointToPointSimilarity.cpp
+	pointmatcher/ErrorMinimizers/GICP/optimize.cpp
+	pointmatcher/ErrorMinimizers/GICP/transform.cpp
+	pointmatcher/ErrorMinimizers/GICP/bfgs_funcs.cpp
 	pointmatcher/ErrorMinimizers/GICP/GICP.cpp
 	pointmatcher/ErrorMinimizers/Identity.cpp
 #DataPointsFilters
@@ -338,7 +341,7 @@ set(POINTMATCHER_SRC
 	pointmatcher/DataPointsFilters/MaxQuantileOnAxis.cpp
 	pointmatcher/DataPointsFilters/MaxDensity.cpp
 	pointmatcher/DataPointsFilters/SurfaceNormal.cpp
-		pointmatcher/DataPointsFilters/SurfaceNormalGICPCovariance.cpp
+	pointmatcher/DataPointsFilters/SurfaceNormalGICPCovariance.cpp
 	pointmatcher/DataPointsFilters/SamplingSurfaceNormal.cpp
 	pointmatcher/DataPointsFilters/OrientNormals.cpp
 	pointmatcher/DataPointsFilters/IncidenceAngle.cpp

@@ -80,12 +80,12 @@ typename PointMatcher<T>::TransformationParameters convertDGCTransformToTransfor
 template<typename T>
 typename PointMatcher<T>::TransformationParameters GICPErrorMinimizer<T>::compute(const ErrorElements& mPtsIn)
 {
-	if (!mPtsIn.reference.descriptorExists("covariance"))
+	if (!mPtsIn.reference.descriptorExists("gicpCovariance"))
 	{
-		throw InvalidField("GICPErrorMinimizer: Error, no covariance found in reference descriptors.");
+		throw InvalidField("GICPErrorMinimizer: Error, no gicpCovariance found in reference descriptors.");
 	}
 	ErrorElements mPts = mPtsIn;
-	const auto& covariances = mPts.reference.getDescriptorViewByName("covariance");
+	const auto& covariances = mPts.reference.getDescriptorViewByName("gicpCovariance");
 
 	int num_matches = 0;
 	int n = mPts.reading.getNbPoints();
@@ -139,46 +139,42 @@ typename PointMatcher<T>::TransformationParameters GICPErrorMinimizer<T>::comput
 		}
 	}
 	/* find correpondences */
-	num_matches = 0;
 	for(int i = 0; i < n; i++)
 	{
-		if(mPts.matches.ids(0, i) != PM::Matches::InvalidId)
+		query_point[0] = mPts.reading.features(0, i);
+		query_point[1] = mPts.reading.features(1, i);
+		query_point[2] = mPts.reading.features(2, i);
+
+		dgc_transform_point(&query_point[0], &query_point[1], &query_point[2], identity);
+		dgc_transform_point(&query_point[0], &query_point[1], &query_point[2], t);
+
+		// set up the updated mahalanobis matrix here
+		gsl_matrix_set_zero(C1);
+		convertDescriptorToGSLMatrix<T>(covariances.col(i), C2);
+		gsl_matrix_view M = gsl_matrix_view_array(&mahalanobis[i][0][0], 3, 3);
+		gsl_matrix_set_zero(&M.matrix);
+		gsl_matrix_set_zero(gsl_temp);
+
+		// M = R*C1  // using M as a temp variable here
+		gsl_blas_dgemm(CblasNoTrans, CblasNoTrans, 1., gsl_R, C1, 1., &M.matrix);
+
+		// temp = M*R' // move the temp value to 'temp' here
+		gsl_blas_dgemm(CblasNoTrans, CblasTrans, 1., &M.matrix, gsl_R, 0., gsl_temp);
+
+		// temp += C2
+		gsl_matrix_add(gsl_temp, C2);
+		// at this point temp = C2 + R*C1*R'
+
+		// now invert temp to get the mahalanobis distance metric for gicp
+		// M = temp^-1
+		gsl_matrix_set_identity(&M.matrix);
+		gsl_linalg_cholesky_decomp(gsl_temp);
+		for(int k = 0; k < 3; k++)
 		{
-			query_point[0] = mPts.reading.features(0, i);
-			query_point[1] = mPts.reading.features(1, i);
-			query_point[2] = mPts.reading.features(2, i);
-
-			dgc_transform_point(&query_point[0], &query_point[1], &query_point[2], identity);
-			dgc_transform_point(&query_point[0], &query_point[1], &query_point[2], t);
-
-			// set up the updated mahalanobis matrix here
-			gsl_matrix_set_identity(C1);
-			convertDescriptorToGSLMatrix<T>(covariances.col(mPts.matches.ids(0, i)), C2);
-			gsl_matrix_view M = gsl_matrix_view_array(&mahalanobis[i][0][0], 3, 3);
-			gsl_matrix_set_zero(&M.matrix);
-			gsl_matrix_set_zero(gsl_temp);
-
-			// M = R*C1  // using M as a temp variable here
-			gsl_blas_dgemm(CblasNoTrans, CblasNoTrans, 1., gsl_R, C1, 1., &M.matrix);
-
-			// temp = M*R' // move the temp value to 'temp' here
-			gsl_blas_dgemm(CblasNoTrans, CblasTrans, 1., &M.matrix, gsl_R, 0., gsl_temp);
-
-			// temp += C2
-			gsl_matrix_add(gsl_temp, C2);
-			// at this point temp = C2 + R*C1*R'
-
-			// now invert temp to get the mahalanobis distance metric for gicp
-			// M = temp^-1
-			gsl_matrix_set_identity(&M.matrix);
-			gsl_linalg_cholesky_decomp(gsl_temp);
-			for(int k = 0; k < 3; k++)
-			{
-				gsl_vector_view row_view = gsl_matrix_row(&M.matrix, k);
-				gsl_linalg_cholesky_svx(gsl_temp, &row_view.vector);
-			}
-			num_matches++;
+			gsl_vector_view row_view = gsl_matrix_row(&M.matrix, k);
+			gsl_linalg_cholesky_svx(gsl_temp, &row_view.vector);
 		}
+		num_matches++;
 	}
 	opt_data.num_matches = num_matches;
 
