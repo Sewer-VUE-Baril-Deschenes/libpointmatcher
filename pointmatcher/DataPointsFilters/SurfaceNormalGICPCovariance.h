@@ -81,7 +81,7 @@ struct SurfaceNormalGICPCovarianceDataPointsFilter: public PointMatcher<T>::Data
                 {"sortEigen" , "whether the eigenvalues and eigenvectors should be sorted (ascending) based on the eigenvalues", "0"},
                 {"smoothNormals", "whether the normal vector should be average with the nearest neighbors", "0"},
                 {"measurementCovariance", "sensor measurement covariance for return intensity", "1", "0", "inf", &P::Comp<T>},
-                {"normalVariance", "point variance along the normal direction", "1", "0", "inf", &P::Comp<T>}
+                {"normalVariance", "point variance along the normal direction", "4e-4", "0", "inf", &P::Comp<T>}
         };
     }
 

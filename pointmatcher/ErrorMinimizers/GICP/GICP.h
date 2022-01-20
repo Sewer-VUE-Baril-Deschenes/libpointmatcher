@@ -36,9 +36,6 @@ struct GICPErrorMinimizer: PointMatcher<T>::ErrorMinimizer
 	GICPErrorMinimizer(const Parameters& params = Parameters());
 	GICPErrorMinimizer(const ParametersDoc paramsDoc, const Parameters& params);
 	virtual TransformationParameters compute(const ErrorElements& mPts);
-
-	static constexpr T TRANSLATION_EPSILON = 5e-4;
-	static constexpr T ROTATION_EPSILON = 2e-3;
 };
 
 

@@ -113,7 +113,7 @@ typename PointMatcher<T>::TransformationParameters GICPErrorMinimizer<T>::comput
 
 	dgc::gicp::GICPOptimizer<T> opt;
 	opt.SetDebug(false);
-	opt.SetMaxIterations(1); // TODO: make sure 1 is the right value
+	opt.SetMaxIterations(10);
 	/* set up the mahalanobis matricies */
 	/* these are identity for now to ease debugging */
 	for(int i = 0; i < n; i++)
