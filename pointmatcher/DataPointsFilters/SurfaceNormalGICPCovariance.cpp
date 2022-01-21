@@ -223,7 +223,6 @@ void SurfaceNormalGICPCovarianceDataPointsFilter<T>::inPlaceFilter(
                 const Eigen::EigenSolver<Matrix> solver(C);
                 eigenVa = solver.eigenvalues().real();
                 eigenVe = solver.eigenvectors().real();
-                pointWeightedCovarianceInScanFrame = Matrix::Zero(featDim - 1, featDim - 1);
                 // sort eigen vectors first
                 const std::vector<size_t> idx = sortIndexes<T>(eigenVa);
                 const size_t idxSize = idx.size();
@@ -237,27 +236,35 @@ void SurfaceNormalGICPCovarianceDataPointsFilter<T>::inPlaceFilter(
                 projectionMatrix.row(0) = eigenVe.col(1).transpose();
                 projectionMatrix.row(1) = eigenVe.col(2).transpose();
                 Matrix descriptorWeights(1, realKnn);
-                for (int j = 0; j < int(knn); ++j) {
-                    if (matches.ids(0, i) != Matches::InvalidId) {
-                        descriptorWeights(0, j) = exp(-0.5 * std::pow((intensities(0, matches.ids(j)) - intensities(0, i)), 2) / intensityCovariance);
+                int validKnnCounter = 0;
+                for (int j = 0; j < int(knn); ++j)
+                {
+                    if (matches.ids(j, i) != Matches::InvalidId)
+                    {
+                        descriptorWeights(0, validKnnCounter) = exp(-0.5 * std::pow((intensities(0, matches.ids(j, i)) - intensities(0, i)), 2) / intensityCovariance);
+                        validKnnCounter ++;
                     }
                 }
                 Matrix projectedNeighbors(2, realKnn);
                 Matrix weightedProjectedNeighbors(2, realKnn);
+                validKnnCounter = 0;
                 for (int j = 0; j < int(knn); ++j) {
-                    if (matches.ids(0, i) != Matches::InvalidId) {
-                        projectedNeighbors.col(j) = projectionMatrix * cloud.features.col(matches.ids(j)).head(3);
-                        weightedProjectedNeighbors.col(j) = descriptorWeights(0, j) * projectedNeighbors.col(j);
+                    if (matches.ids(j, i) != Matches::InvalidId) {
+                        projectedNeighbors.col(validKnnCounter) = projectionMatrix * cloud.features.col(matches.ids(j, i)).head(3);
+                        weightedProjectedNeighbors.col(validKnnCounter) = descriptorWeights(0, validKnnCounter) * projectedNeighbors.col(validKnnCounter);
+                        validKnnCounter ++;
                     }
                 }
                 T weightedSumInverse = 1 / descriptorWeights.sum();
                 Vector weightedMean = weightedSumInverse * weightedProjectedNeighbors.rowwise().sum();
                 Matrix weightedCovariance = Matrix::Zero(featDim - 2, featDim - 2);
+                validKnnCounter = 0;
                 for (int j = 0; j < int(knn); ++j) {
-                    if (matches.ids(0, i) != Matches::InvalidId) {
-                        Vector projectedNeighborError = projectedNeighbors.col(j) - weightedMean;
+                    if (matches.ids(j, i) != Matches::InvalidId) {
+                        Vector projectedNeighborError = projectedNeighbors.col(validKnnCounter) - weightedMean;
                         weightedCovariance +=
-                                descriptorWeights(0, j) * (projectedNeighborError * projectedNeighborError.transpose());
+                                descriptorWeights(0, validKnnCounter) * (projectedNeighborError * projectedNeighborError.transpose());
+                        validKnnCounter ++;
                     }
                 }
                 weightedCovariance = weightedSumInverse * weightedCovariance;
@@ -270,7 +277,7 @@ void SurfaceNormalGICPCovarianceDataPointsFilter<T>::inPlaceFilter(
                 pointWeightedCovarianceInPlane.topLeftCorner(featDim - 2, featDim - 2) = weightedCovariance; // Multi-channel GICP
 //                pointWeightedCovarianceInPlane.topLeftCorner(featDim - 2, featDim - 2) = Matrix::Identity(featDim - 2, featDim - 2); // Plane-to-plane GICP
                 pointWeightedCovarianceInPlane(featDim - 2, featDim - 2) = normalVariance;
-                Matrix rotationPlaneToScan(featDim - 1, featDim - 1);
+                Matrix rotationPlaneToScan(featDim - 1, featDim - 1); // TODO: Make sure right-handed convention is respected with eigenvectors
                 rotationPlaneToScan.col(0) = eigenVe.col(1);
                 rotationPlaneToScan.col(1) = eigenVe.col(2);
                 rotationPlaneToScan.col(2) = eigenVe.col(
