@@ -296,7 +296,7 @@ void SurfaceNormalGICPCovarianceDataPointsFilter<T>::inPlaceFilter(
 			}
 			else
 			{
-				pointWeightedCovarianceInScanFrame = Matrix::Zero(featDim - 1, featDim - 1);
+				pointWeightedCovarianceInScanFrame = Matrix::Identity(featDim - 1, featDim - 1);
 			}
 		}
 		if(keepNormals || keepEigenValues || keepEigenVectors)

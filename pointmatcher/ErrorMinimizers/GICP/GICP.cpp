@@ -174,12 +174,17 @@ typename PointMatcher<T>::TransformationParameters GICPErrorMinimizer<T>::comput
 		// now invert temp to get the mahalanobis distance metric for gicp
 		// M = temp^-1
 		gsl_matrix_set_identity(&M.matrix);
-		gsl_linalg_cholesky_decomp(gsl_temp);
-		for(int k = 0; k < 3; k++)
+		gsl_error_handler_t* error_handler = gsl_set_error_handler_off();
+		int status = gsl_linalg_cholesky_decomp(gsl_temp);
+		if(status != GSL_EDOM)
 		{
-			gsl_vector_view row_view = gsl_matrix_row(&M.matrix, k);
-			gsl_linalg_cholesky_svx(gsl_temp, &row_view.vector);
+			for(int k = 0; k < 3; k++)
+			{
+				gsl_vector_view row_view = gsl_matrix_row(&M.matrix, k);
+				gsl_linalg_cholesky_svx(gsl_temp, &row_view.vector);
+			}
 		}
+		gsl_set_error_handler(error_handler);
 	}
 
 	/* optimize transformation using the current assignment and Mahalanobis metrics*/
