@@ -153,7 +153,7 @@ typename PointMatcher<T>::TransformationParameters GICPErrorMinimizer<T>::comput
 		dgc_transform_point(&query_point[0], &query_point[1], &query_point[2], identity);
 		dgc_transform_point(&query_point[0], &query_point[1], &query_point[2], t);
 
-		// set up the updated mahalanobis matrix here
+//		 set up the updated mahalanobis matrix here
 		convertDescriptorToGSLMatrix<T>(readingCovariances.col(i), C1); // Plane-to-plane
 //		gsl_matrix_set_zero(C1); // Point-to-plane
 		convertDescriptorToGSLMatrix<T>(referenceCovariances.col(i), C2);
