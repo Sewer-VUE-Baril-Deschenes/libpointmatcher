@@ -181,14 +181,39 @@ void SurfaceNormalGICPCovarianceDataPointsFilter<T>::inPlaceFilter(
 	Matches matches(typename Matches::Dists(knn, pointsCount), typename Matches::Ids(knn, pointsCount));
 	matches = matcher.findClosests(cloud);
 
-	const auto& intensities = cloud.getDescriptorViewByName("intensity");
-	T intensityCovariance;
+	const auto& intensities = cloud.getDescriptorViewByName("normalizedIntensity");
+	T intensityCovariance = 0;
+    std::vector<bool> invalidIntensity;
 	if(keepGICPCovariance)
 	{
-		const T intensityMean = intensities.mean();
-		const Matrix intensityDeviations = intensities.array() - intensityMean;
-		intensityCovariance = (intensityDeviations * intensityDeviations.transpose())(0, 0) / T(intensities.cols());
-	}
+		T intensityMean = 0;
+        int validIntensityCount = 0;
+//        const Matrix intensityDeviations = intensities.array() - intensityMean;
+        //		intensityCovariance = (intensityDeviations * intensityDeviations.transpose())(0, 0) / T(intensities.cols());
+
+        for(int i = 0; i < pointsCount; ++i)
+        {
+            if (intensities(0, i) == -1)
+            {
+                invalidIntensity.push_back(true);
+            }
+            else
+            {
+                intensityMean += intensities(0, i);
+                invalidIntensity.push_back(false);
+                validIntensityCount++;
+            }
+        }
+        intensityMean = intensityMean / validIntensityCount;
+        for(int i = 0; i < pointsCount; ++i)
+        {
+            if (!invalidIntensity[i])
+            {
+                intensityCovariance += (intensities(0, i) - intensityMean) * (intensities(0, i) - intensityMean);
+            }
+        }
+        intensityCovariance = intensityCovariance / validIntensityCount;
+    }
 
 	// Search for surrounding points and compute descriptors
 	int degenerateCount(0);
@@ -200,7 +225,7 @@ void SurfaceNormalGICPCovarianceDataPointsFilter<T>::inPlaceFilter(
 		int realKnn = 0;
 		for(int j = 0; j < int(knn); ++j)
 		{
-			if(matches.dists(j, i) != Matches::InvalidDist)
+			if(matches.dists(j, i) != Matches::InvalidDist && !invalidIntensity[matches.ids(j, i)])
 			{
 				const int refIndex(matches.ids(j, i));
 				d.col(realKnn) = cloud.features.block(0, refIndex, featDim - 1, 1);
@@ -217,9 +242,11 @@ void SurfaceNormalGICPCovarianceDataPointsFilter<T>::inPlaceFilter(
 		Matrix eigenVe = Matrix::Zero(featDim - 1, featDim - 1);
 		// Ensure that the matrix is suited for eigenvalues calculation
 		Matrix pointWeightedCovarianceInScanFrame;
+
+
 		if(keepGICPCovariance)
 		{
-			if(C.fullPivHouseholderQr().rank() + 1 >= featDim - 1)
+			if(C.fullPivHouseholderQr().rank() + 1 >= featDim - 1 && !invalidIntensity[i])
 			{
 				const Eigen::EigenSolver<Matrix> solver(C);
 				eigenVa = solver.eigenvalues().real();
@@ -241,7 +268,7 @@ void SurfaceNormalGICPCovarianceDataPointsFilter<T>::inPlaceFilter(
 				int validKnnCounter = 0;
 				for(int j = 0; j < int(knn); ++j)
 				{
-					if(matches.ids(j, i) != Matches::InvalidId)
+					if(matches.ids(j, i) != Matches::InvalidId && !invalidIntensity[matches.ids(j, i)])
 					{
 						descriptorWeights(0, validKnnCounter) = exp(-0.5 * std::pow((intensities(0, matches.ids(j, i)) - intensities(0, i)), 2) / intensityCovariance);
 						validKnnCounter++;
@@ -252,7 +279,7 @@ void SurfaceNormalGICPCovarianceDataPointsFilter<T>::inPlaceFilter(
 				validKnnCounter = 0;
 				for(int j = 0; j < int(knn); ++j)
 				{
-					if(matches.ids(j, i) != Matches::InvalidId)
+					if(matches.ids(j, i) != Matches::InvalidId && !invalidIntensity[matches.ids(j, i)])
 					{
 						projectedNeighbors.col(validKnnCounter) = projectionMatrix * cloud.features.col(matches.ids(j, i)).head(3);
 						weightedProjectedNeighbors.col(validKnnCounter) = descriptorWeights(0, validKnnCounter) * projectedNeighbors.col(validKnnCounter);
@@ -265,7 +292,7 @@ void SurfaceNormalGICPCovarianceDataPointsFilter<T>::inPlaceFilter(
 				validKnnCounter = 0;
 				for(int j = 0; j < int(knn); ++j)
 				{
-					if(matches.ids(j, i) != Matches::InvalidId)
+					if(matches.ids(j, i) != Matches::InvalidId && !invalidIntensity[matches.ids(j, i)])
 					{
 						Vector projectedNeighborError = projectedNeighbors.col(validKnnCounter) - weightedMean;
 						weightedCovariance +=

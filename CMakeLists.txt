@@ -345,6 +345,7 @@ set(POINTMATCHER_SRC
 	pointmatcher/DataPointsFilters/SamplingSurfaceNormal.cpp
 	pointmatcher/DataPointsFilters/OrientNormals.cpp
 	pointmatcher/DataPointsFilters/IncidenceAngle.cpp
+	pointmatcher/DataPointsFilters/IntensityNormalization.cpp
 	pointmatcher/DataPointsFilters/RandomSampling.cpp
 	pointmatcher/DataPointsFilters/MaxPointCount.cpp
 	pointmatcher/DataPointsFilters/FixStepSampling.cpp

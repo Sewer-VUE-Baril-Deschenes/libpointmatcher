@@ -48,6 +48,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "DataPointsFilters/SamplingSurfaceNormal.h"
 #include "DataPointsFilters/OrientNormals.h"
 #include "DataPointsFilters/IncidenceAngle.h"
+#include "DataPointsFilters/IntensityNormalization.h"
 #include "DataPointsFilters/RandomSampling.h"
 #include "DataPointsFilters/MaxPointCount.h"
 #include "DataPointsFilters/FixStepSampling.h"
@@ -82,6 +83,7 @@ struct DataPointsFiltersImpl
 	typedef ::SamplingSurfaceNormalDataPointsFilter<T> SamplingSurfaceNormalDataPointsFilter;
 	typedef ::OrientNormalsDataPointsFilter<T>  OrientNormalsDataPointsFilter;
 	typedef ::IncidenceAngleDataPointsFilter<T> IncidenceAngleDataPointsFilter;
+	typedef ::IntensityNormalizationDataPointsFilter<T> IntensityNormalizationDataPointsFilter;
 	typedef ::RandomSamplingDataPointsFilter<T> RandomSamplingDataPointsFilter;
 	typedef ::MaxPointCountDataPointsFilter<T> MaxPointCountDataPointsFilter;
 	typedef ::FixStepSamplingDataPointsFilter<T> FixStepSamplingDataPointsFilter;

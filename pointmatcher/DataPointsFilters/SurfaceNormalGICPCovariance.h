@@ -61,7 +61,7 @@ struct SurfaceNormalGICPCovarianceDataPointsFilter: public PointMatcher<T>::Data
     {
         return "This filter extracts the surface normal vector and other statistics to each point by taking the eigenvector corresponding to the smallest eigenvalue of its nearest neighbors.\n\n"
                "Required descriptors: none.\n"
-               "Produced descritors:  normals(optional), densities(optional), eigValues(optional), eigVectors(optional), matchedIds (optional), meanDists(optional).\n"
+               "Produced descritors:  normals(optional), densities(optional), eigValues(optional), eigVectors(optional), matchedIds (optional), meanDists(optional), normalizedIntensity.\n"
                "Altered descriptors:  none.\n"
                "Altered features:     none.";
     }
